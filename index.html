@@ -121,5 +121,71 @@ function renderReviews(){const box=document.getElementById('reviewsList');box.in
 document.getElementById('newsletterForm').addEventListener('submit',e=>{e.preventDefault();notify('Teşekkürler! E-posta kaydı bu prototipte henüz etkin değil.');e.target.reset()});
 document.querySelectorAll('.nav a').forEach(a=>a.addEventListener('click',()=>document.getElementById('mainNav').classList.remove('open')));
 </script>
+  <section id="gastrovia-ai" style="max-width:800px;margin:40px auto;padding:24px;border-radius:16px;background:#f5f1e8;color:#244536;font-family:Arial,sans-serif;">
+  <h2>🍲 Gastrovia Yapay Zekâ Şefi</h2>
+  <p>Evindeki malzemeleri yaz, sana özel tarifler oluşturalım.</p>
+
+  <label for="gv-ingredients">Hangi malzemelerin var?</label>
+  <textarea id="gv-ingredients" placeholder="Örn. tavuk, patates, yoğurt..." style="display:block;width:100%;min-height:80px;margin:10px 0;padding:12px;box-sizing:border-box;"></textarea>
+
+  <label for="gv-goal">Amacın</label>
+  <select id="gv-goal" style="display:block;width:100%;margin:10px 0;padding:10px;">
+    <option value="Dengeli beslenme">Dengeli beslenme</option>
+    <option value="Ekonomik tarif">Ekonomik tarif</option>
+    <option value="Yüksek protein">Yüksek protein</option>
+    <option value="Yeni lezzetler keşfetmek">Yeni lezzetler keşfetmek</option>
+  </select>
+
+  <label for="gv-meal">Öğün</label>
+  <select id="gv-meal" style="display:block;width:100%;margin:10px 0;padding:10px;">
+    <option value="Fark etmez">Fark etmez</option>
+    <option value="Kahvaltı">Kahvaltı</option>
+    <option value="Öğle yemeği">Öğle yemeği</option>
+    <option value="Akşam yemeği">Akşam yemeği</option>
+    <option value="Atıştırmalık">Atıştırmalık</option>
+  </select>
+
+  <button id="gv-generate" type="button" style="padding:12px 20px;background:#244536;color:white;border:0;border-radius:8px;cursor:pointer;">Bana Tarif Öner</button>
+
+  <p id="gv-status" role="status"></p>
+  <div id="gv-answer" style="white-space:pre-wrap;line-height:1.6;"></div>
+</section>
+
+<script>
+document.getElementById("gv-generate").addEventListener("click", async function () {
+  const ingredients = document.getElementById("gv-ingredients").value.trim();
+  const goal = document.getElementById("gv-goal").value;
+  const mealType = document.getElementById("gv-meal").value;
+  const status = document.getElementById("gv-status");
+  const answer = document.getElementById("gv-answer");
+
+  if (!ingredients) {
+    status.textContent = "Lütfen önce elindeki malzemeleri yaz.";
+    return;
+  }
+
+  this.disabled = true;
+  status.textContent = "Şefimiz tarifini hazırlıyor...";
+  answer.textContent = "";
+
+  try {
+    const response = await fetch("/api/recipe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ingredients, goal, mealType })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "İstek başarısız oldu.");
+
+    answer.textContent = data.answer || "Henüz bir tarif yanıtı alınamadı.";
+    status.textContent = "";
+  } catch (error) {
+    status.textContent = "Tarif oluşturulamadı: " + error.message;
+  } finally {
+    this.disabled = false;
+  }
+});
+</script>
 </body>
 </html>
