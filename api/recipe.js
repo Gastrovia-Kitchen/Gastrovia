@@ -1,4 +1,3 @@
-```javascript
 module.exports = async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -8,6 +7,12 @@ module.exports = async (req, res) => {
 
   try {
     const { ingredients, goal, budget, mealType, message } = req.body || {};
+
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({
+        error: "OpenAI API anahtarı ayarlanmamış."
+      });
+    }
 
     const prompt = `
 Sen Gastrovia'nın profesyonel gastronomi asistanısın.
@@ -20,7 +25,8 @@ Bütçe: ${budget || "Belirtilmedi"}
 Öğün: ${mealType || "Belirtilmedi"}
 Ek istek: ${message || "Belirtilmedi"}
 
-Bir tarif önerirken malzemeleri, miktarları, hazırlanışı ve pişirme süresini belirt.
+Tarifin adını, kaç kişilik olduğunu, malzemeleri ve miktarlarını,
+hazırlanışını, pişirme süresini ve sunum önerisini belirt.
 `;
 
     const response = await fetch("https://api.openai.com/v1/responses", {
@@ -40,21 +46,19 @@ Bir tarif önerirken malzemeleri, miktarları, hazırlanışı ve pişirme süre
     if (!response.ok) {
       console.error("OpenAI API hatası:", data);
       return res.status(502).json({
-        error: "Yapay zekâ yanıt veremedi. API ayarlarını kontrol et."
+        error: "Tarif oluşturulamadı. API ayarlarını kontrol edin."
       });
     }
 
-    const answer =
-      data.output_text ||
-      "Şu anda yanıt oluşturulamadı. Lütfen tekrar dene.";
-
-    return res.status(200).json({ answer });
+    return res.status(200).json({
+      answer: data.output_text || "Lütfen tekrar deneyin."
+    });
 
   } catch (error) {
     console.error("Gastrovia API hatası:", error);
+
     return res.status(500).json({
       error: "Beklenmeyen bir hata oluştu."
     });
   }
 };
-```
