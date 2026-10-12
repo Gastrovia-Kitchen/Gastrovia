@@ -1,3 +1,4 @@
+```javascript
 module.exports = async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -43,9 +44,12 @@ Bir tarif önerirken malzemeleri, miktarları, hazırlanışı ve pişirme süre
       });
     }
 
-    return res.status(200).json({
-      answer: data.output_text || "Lütfen tekrar dene."
-    });
+    const answer =
+      data.output_text ||
+      "Şu anda yanıt oluşturulamadı. Lütfen tekrar dene.";
+
+    return res.status(200).json({ answer });
+
   } catch (error) {
     console.error("Gastrovia API hatası:", error);
     return res.status(500).json({
@@ -53,3 +57,4 @@ Bir tarif önerirken malzemeleri, miktarları, hazırlanışı ve pişirme süre
     });
   }
 };
+```
