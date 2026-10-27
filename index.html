@@ -187,5 +187,203 @@ document.getElementById("gv-generate").addEventListener("click", async function 
   }
 });
 </script>
+<!-- GASTROVIA FIT MUTFAK -->
+<style>
+  #gastrovia-fit {
+    background: #f6f3ec;
+    color: #20291d;
+    padding: 55px 5%;
+    font-family: Arial, sans-serif;
+  }
+
+  #gastrovia-fit .fit-heading {
+    max-width: 760px;
+    margin: 0 auto 32px;
+    text-align: center;
+  }
+
+  #gastrovia-fit .fit-heading span {
+    color: #a85e43;
+    letter-spacing: 3px;
+    font-size: 12px;
+    text-transform: uppercase;
+  }
+
+  #gastrovia-fit .fit-heading h2 {
+    font-family: Georgia, serif;
+    font-size: clamp(30px, 5vw, 48px);
+    font-weight: normal;
+    margin: 12px 0;
+  }
+
+  #gastrovia-fit .fit-heading p {
+    color: #62685b;
+    line-height: 1.8;
+  }
+
+  #gastrovia-fit .fit-grid {
+    max-width: 1200px;
+    margin: auto;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+  }
+
+  #gastrovia-fit .fit-card {
+    background: #fffdf8;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e8e3d8;
+    transition: transform .25s, box-shadow .25s;
+  }
+
+  #gastrovia-fit .fit-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 28px #20291d15;
+  }
+
+  #gastrovia-fit .fit-card img {
+    display: block;
+    width: 100%;
+    height: 235px;
+    object-fit: cover;
+    background: #e8e3d8;
+  }
+
+  #gastrovia-fit .fit-card-content {
+    padding: 20px;
+  }
+
+  #gastrovia-fit .fit-label {
+    color: #a85e43;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+
+  #gastrovia-fit .fit-card h3 {
+    font-family: Georgia, serif;
+    font-size: 22px;
+    font-weight: normal;
+    line-height: 1.4;
+    margin: 10px 0;
+  }
+
+  #gastrovia-fit .fit-card p {
+    color: #62685b;
+    font-size: 14px;
+    line-height: 1.7;
+    min-height: 48px;
+  }
+
+  #gastrovia-fit .fit-meta {
+    border-top: 1px solid #e8e3d8;
+    padding-top: 13px;
+    font-size: 13px;
+    color: #62685b;
+  }
+
+  #gastrovia-fit .fit-button {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 11px 17px;
+    background: #20291d;
+    color: #fffdf8;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  #gastrovia-fit .fit-button:hover {
+    background: #6b7658;
+  }
+
+  #gastrovia-fit .fit-note {
+    max-width: 1200px;
+    margin: 28px auto 0;
+    color: #77796e;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 850px) {
+    #gastrovia-fit .fit-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 540px) {
+    #gastrovia-fit {
+      padding: 38px 5%;
+    }
+
+    #gastrovia-fit .fit-grid {
+      grid-template-columns: 1fr;
+    }
+
+    #gastrovia-fit .fit-card img {
+      height: 250px;
+    }
+  }
+</style>
+
+<section id="gastrovia-fit">
+  <div class="fit-heading">
+    <span>Gastrovia · Akıllı Beslenme</span>
+    <h2>Fit Mutfak</h2>
+    <p>
+      Dengeli beslenirken lezzetten vazgeçmeyin.
+      Özenle hazırlanan tarifleri keşfedin, kendi mutfağınızda deneyin.
+    </p>
+  </div>
+
+  <div class="fit-grid">
+
+    <article class="fit-card">
+      <img src="https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=800&q=85"
+           alt="Tavuk ve sebzelerle hazırlanan dengeli tabak" loading="lazy">
+      <div class="fit-card-content">
+        <span class="fit-label">Protein odaklı</span>
+        <h3>Üzümlü Tavuk ve Domatesli Bulgur</h3>
+        <p>Sarımsaklı yoğurtla tamamlanan, tatlı ve tuzlu lezzetleri buluşturan tabak.</p>
+        <div class="fit-meta">1 kişilik · Besin değerleri hesaplanacak</div>
+        <button class="fit-button" onclick="alert('Tarif ayrıntılarını bir sonraki aşamada ekleyeceğiz.')">Tarifi keşfet</button>
+      </div>
+    </article>
+
+    <article class="fit-card">
+      <img src="https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=800&q=85"
+           alt="Balık ve sebzelerle hazırlanan tabak" loading="lazy">
+      <div class="fit-card-content">
+        <span class="fit-label">Omega-3 kaynağı</span>
+        <h3>Fırın Somon ve Yeşil Mercimek</h3>
+        <p>Limonlu pancarla tamamlanan, farklı dokuları bir araya getiren dengeli öğün.</p>
+        <div class="fit-meta">1 kişilik · Besin değerleri hesaplanacak</div>
+        <button class="fit-button" onclick="alert('Tarif ayrıntılarını bir sonraki aşamada ekleyeceğiz.')">Tarifi keşfet</button>
+      </div>
+    </article>
+
+    <article class="fit-card">
+      <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=85"
+           alt="Sebzeli ve tahıllı yemek tabağı" loading="lazy">
+      <div class="fit-card-content">
+        <span class="fit-label">Dengeli öğün</span>
+        <h3>Biberli Dana Sote ve Bulgur</h3>
+        <p>Yoğurtlu patlıcanla servis edilen, doyurucu ve lezzetli bir ana yemek.</p>
+        <div class="fit-meta">1 kişilik · Besin değerleri hesaplanacak</div>
+        <button class="fit-button" onclick="alert('Tarif ayrıntılarını bir sonraki aşamada ekleyeceğiz.')">Tarifi keşfet</button>
+      </div>
+    </article>
+
+  </div>
+
+  <p class="fit-note">
+    Not: Bu aşamadaki görseller tasarım denemesi içindir; tariflerle birebir
+    eşleşmeleri henüz doğrulanmadı. Kalori ve makro besin değerleri de
+    malzeme miktarları netleştirilerek hesaplanacaktır.
+  </p>
+</section>
+<!-- GASTROVIA FIT MUTFAK SONU -->
 </body>
 </html>
