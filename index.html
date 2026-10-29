@@ -169,17 +169,49 @@ document.getElementById("gv-generate").addEventListener("click", async function 
   answer.textContent = "";
 
   try {
-    const response = await fetch("/api/recipe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ingredients, goal, mealType })
-    });
+   const malzemeler = ingredients.toLocaleLowerCase("tr-TR");
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "İstek başarısız oldu.");
+const tarifler = [
+  {
+    ad: "Limonlu Tavuk ve Pirinç",
+    anahtarlar: ["tavuk", "pirinç"],
+    tarif: "2 porsiyon: 300 g tavuk, 120 g pirinç, 1/2 limon, 1 yemek kaşığı zeytinyağı. Pirinci yıka ve pişir. Tavuğu doğra, yağda 8-10 dakika pişir. Limon suyu ve baharat ekle. Pirinçle servis et. Toplam: 25-30 dakika."
+  },
+  {
+    ad: "Domatesli Tavuk Sote",
+    anahtarlar: ["tavuk", "domates"],
+    tarif: "2 porsiyon: 300 g tavuk, 2 domates, 1 yeşil biber, 1 yemek kaşığı zeytinyağı. Tavuğu doğrayıp yağda 5 dakika sotele. Biber ve domatesi ekle. Tavuk tamamen pişene kadar 10-15 dakika daha pişir. Toplam: 25 dakika."
+  },
+  {
+    ad: "Nohutlu Sebze Tabağı",
+    anahtarlar: ["nohut"],
+    tarif: "2 porsiyon: 300 g haşlanmış nohut, 1 kapya biber, 1 küçük kabak, 1 yemek kaşığı zeytinyağı, yarım limon. Sebzeleri doğra ve tavada 8-10 dakika pişir. Nohutu ekleyip 5 dakika ısıt. Limon ve baharatla tamamla. Toplam: 20 dakika."
+  },
+  {
+    ad: "Yoğurtlu Salatalık ve Yumurta",
+    anahtarlar: ["yoğurt", "yumurta"],
+    tarif: "2 porsiyon: 2 yumurta, 200 g yoğurt, 1 salatalık, dereotu. Yumurtaları 8-10 dakika haşla. Salatalığı rendele ve yoğurtla karıştır. Yumurtaları dilimleyip üzerine koy. Toplam: 15 dakika."
+  }
+];
 
-    answer.textContent = data.answer || "Henüz bir tarif yanıtı alınamadı.";
-    status.textContent = "";
+const bulunanlar = tarifler.filter(tarif =>
+  tarif.anahtarlar.every(malzeme =>
+    malzemeler.includes(malzeme)
+  )
+);
+
+if (bulunanlar.length > 0) {
+  answer.textContent = bulunanlar.map(tarif =>
+    tarif.ad + "\n" + tarif.tarif
+  ).join("\n\n--------------------\n\n");
+} else {
+  answer.textContent =
+    "Bu malzemelerle henüz kayıtlı bir tarif bulamadım. " +
+    "Tavuk, pirinç, domates, nohut, yoğurt veya yumurta gibi " +
+    "malzemelerle tekrar deneyebilirsin.";
+}
+
+status.textContent = "";
   } catch (error) {
     status.textContent = "Tarif oluşturulamadı: " + error.message;
   } finally {
