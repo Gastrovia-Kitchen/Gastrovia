@@ -6,11 +6,18 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY?.trim();
+
+    // Anahtarın kendisini asla loglama.
+    console.log("GEMINI_API_KEY kontrolü:", {
+      mevcut: Boolean(apiKey),
+      uzunluk: apiKey ? apiKey.length : 0
+    });
 
     if (!apiKey) {
       return res.status(500).json({
-        error: "GEMINI_API_KEY bulunamadı. Vercel ayarlarını kontrol et."
+        error:
+          "Vercel sunucusu GEMINI_API_KEY değişkenini alamıyor. Ortam değişkeni ve dağıtım ayarları kontrol edilmeli."
       });
     }
 
@@ -22,32 +29,27 @@ module.exports = async (req, res) => {
       message
     } = req.body || {};
 
-    if (!ingredients || !ingredients.trim()) {
+    if (!ingredients || !String(ingredients).trim()) {
       return res.status(400).json({
         error: "Lütfen malzemelerini yaz."
       });
     }
 
     const prompt = `
-Sen Gastroviya'nın profesyonel gastronomi şefisin.
-Türkçe yanıt ver. Sıradan, klişe tarifler üretme.
-Verilen malzemelerle yaratıcı ama evde uygulanabilir,
-lezzet dengesi ve doku uyumu düşünülmüş tarif geliştir.
+Sen Gastrovia'nın profesyonel gastronomi asistanısın.
+Türkçe yanıt ver. Özgün, lezzet dengesi düşünülmüş,
+evde uygulanabilir tarifler oluştur.
 
-Malzemeler: ${ingredients}
-Amaç: ${goal || "Dengeli beslenme"}
+Kullanıcının malzemeleri: ${ingredients}
+Amaç: ${goal || "Belirtilmedi"}
 Bütçe: ${budget || "Belirtilmedi"}
-Öğün: ${mealType || "Fark etmez"}
-Ek istek: ${message || "Yok"}
+Öğün: ${mealType || "Belirtilmedi"}
+Ek istek: ${message || "Belirtilmedi"}
 
-2 porsiyon için:
-- Malzemeleri gram cinsinden yaz.
-- Hazırlık ve pişirme sürelerini belirt.
-- Adım adım yapılışı anlat.
-- Lezzet dengesini ve teknikleri açıkla.
-- Tabaklama önerisi ve uygun alternatifler ver.
-- Kullanıcının elinde olmayan malzemeleri zorunlu tutma.
-- Sağlık ve besin değerleri hakkında kesin olmayan iddialar kurma.
+İki porsiyon için gram cinsinden malzemeleri,
+hazırlık ve pişirme sürelerini, adım adım yapılışı,
+pişirme tekniklerini, tabaklamayı ve uygun alternatifleri belirt.
+Kullanıcının elinde olmayan malzemeleri zorunlu tutma.
 `;
 
     const response = await fetch(
@@ -61,17 +63,9 @@ Ek istek: ${message || "Yok"}
         body: JSON.stringify({
           contents: [
             {
-              parts: [
-                {
-                  text: prompt
-                }
-              ]
+              parts: [{ text: prompt }]
             }
-          ],
-          generationConfig: {
-            temperature: 0.9,
-            maxOutputTokens: 2048
-          }
+          ]
         })
       }
     );
@@ -79,10 +73,17 @@ Ek istek: ${message || "Yok"}
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("Gemini API hatası:", response.status, data);
+      const googleMessage =
+        data?.error?.message || "Google açıklama göndermedi.";
+
+      // Anahtarın kendisini veya isteğin gizli başlıklarını loglama.
+      console.error("Gemini API hata tanılaması:", {
+        httpStatus: response.status,
+        googleMessage
+      });
 
       return res.status(502).json({
-        error: JSON.stringify(data.error || data)
+        error: `Google Gemini hatası (HTTP ${response.status}): ${googleMessage}`
       });
     }
 
@@ -92,20 +93,28 @@ Ek istek: ${message || "Yok"}
       .trim();
 
     if (!answer) {
-      console.error("Gemini boş yanıt:", data);
+      console.error("Gemini yanıtında tarif metni bulunamadı.", {
+        finishReason: data.candidates?.[0]?.finishReason,
+        promptFeedback: data.promptFeedback
+      });
 
       return res.status(502).json({
-        error: "Gemini boş yanıt verdi: " + JSON.stringify(data.candidates || data)
+        error:
+          "Google isteği kabul etti ancak tarif metni dönmedi. İstek güvenlik nedeniyle engellenmiş olabilir veya yanıt boş olabilir."
       });
     }
 
     return res.status(200).json({ answer });
 
   } catch (error) {
-    console.error("Gastrovia Gemini hatası:", error);
+    console.error("Gastrovia sunucu hatası:", {
+      name: error?.name,
+      message: error?.message
+    });
 
     return res.status(500).json({
-      error: error.message || "Sunucuda beklenmeyen bir hata oluştu."
+      error:
+        "Sunucu isteği tamamlayamadı. Vercel Runtime Logs bölümünü kontrol etmek gerekiyor."
     });
   }
 };
