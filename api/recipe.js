@@ -1,59 +1,61 @@
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
-      error: "Yalnızca POST isteği desteklenir."
+      error: "Bu işlem yalnızca POST isteğiyle yapılabilir."
+    });
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    console.error("GEMINI_API_KEY ortam değişkeni bulunamadı.");
+
+    return res.status(500).json({
+      error:
+        "Gemini API anahtarı bulunamadı. Vercel Environment Variables bölümünde GEMINI_API_KEY tanımlı mı kontrol edin."
     });
   }
 
   try {
-    const apiKey = process.env.GEMINI_API_KEY?.trim();
-
-    // Anahtarın kendisini asla loglama.
-    console.log("GEMINI_API_KEY kontrolü:", {
-      mevcut: Boolean(apiKey),
-      uzunluk: apiKey ? apiKey.length : 0
-    });
-
-    if (!apiKey) {
-      return res.status(500).json({
-        error:
-          "Vercel sunucusu GEMINI_API_KEY değişkenini alamıyor. Ortam değişkeni ve dağıtım ayarları kontrol edilmeli."
-      });
-    }
-
     const {
-      ingredients,
-      goal,
-      budget,
-      mealType,
-      message
+      ingredients = "",
+      goal = "Dengeli beslenme",
+      mealType = "Ana öğün",
+      budget = "",
+      message = ""
     } = req.body || {};
 
-    if (!ingredients || !String(ingredients).trim()) {
-      return res.status(400).json({
-        error: "Lütfen malzemelerini yaz."
-      });
-    }
-
     const prompt = `
-Sen Gastrovia'nın profesyonel gastronomi asistanısın.
-Türkçe yanıt ver. Özgün, lezzet dengesi düşünülmüş,
-evde uygulanabilir tarifler oluştur.
+Sen Gastroviya'nın profesyonel gastronomi ve reçete geliştirme şefisin.
 
-Kullanıcının malzemeleri: ${ingredients}
-Amaç: ${goal || "Belirtilmedi"}
+Amacın sıradan, birbirini tekrar eden tarifler değil; evde uygulanabilir,
+lezzet dengesi düşünülmüş, yaratıcı ve gerçekten yapılmaya değer tarifler
+oluşturmaktır.
+
+Kullanıcının malzemeleri: ${ingredients || "Belirtilmedi"}
+Beslenme hedefi: ${goal}
+Öğün türü: ${mealType}
 Bütçe: ${budget || "Belirtilmedi"}
-Öğün: ${mealType || "Belirtilmedi"}
-Ek istek: ${message || "Belirtilmedi"}
+Kullanıcının isteği: ${message || "Malzemelere uygun bir tarif öner."}
 
-İki porsiyon için gram cinsinden malzemeleri,
-hazırlık ve pişirme sürelerini, adım adım yapılışı,
-pişirme tekniklerini, tabaklamayı ve uygun alternatifleri belirt.
-Kullanıcının elinde olmayan malzemeleri zorunlu tutma.
+Kurallar:
+- Türkçe yanıt ver.
+- Önce isteğe gerçekten uygun tek bir güçlü tarif öner.
+- Gereksiz yere pahalı, zor bulunan malzemeler kullanma.
+- Malzemeleri gram ve mililitre cinsinden belirt; adet gerekiyorsa adet de yaz.
+- Kaç kişilik olduğunu, hazırlık ve pişirme sürelerini belirt.
+- Uygulama adımlarını açık ve sıralı yaz.
+- Pişirme sıcaklığı gerekiyorsa belirt.
+- Lezzet dengesi ve kullanılan tekniğin nedenini kısaca açıkla.
+- Uygunsa yaklaşık besin değerlerini belirt; bunların tahmini olduğunu söyle.
+- Kullanıcının belirtmediği malzemeleri elinde varmış gibi varsayma.
+- Klişe ve birbirine benzeyen tariflerden kaçın.
+- Beslenme hedefi verilmişse tarifi buna uygun tasarla; sağlıkla ilgili kesin vaatlerde bulunma.
+- Kullanıcı belirli bir şey istediyse genel bir tarif yerine doğrudan o isteğe cevap ver.
 `;
 
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
       {
         method: "POST",
         headers: {
@@ -63,9 +65,14 @@ Kullanıcının elinde olmayan malzemeleri zorunlu tutma.
         body: JSON.stringify({
           contents: [
             {
+              role: "user",
               parts: [{ text: prompt }]
             }
-          ]
+          ],
+          generationConfig: {
+            temperature: 0.8,
+            maxOutputTokens: 4096
+          }
         })
       }
     );
@@ -74,47 +81,39 @@ Kullanıcının elinde olmayan malzemeleri zorunlu tutma.
 
     if (!response.ok) {
       const googleMessage =
-        data?.error?.message || "Google açıklama göndermedi.";
+        data?.error?.message || "Google Gemini isteği başarısız oldu.";
 
-      // Anahtarın kendisini veya isteğin gizli başlıklarını loglama.
-      console.error("Gemini API hata tanılaması:", {
-        httpStatus: response.status,
-        googleMessage
-      });
+      console.error("Gemini API hatası:", response.status, googleMessage);
 
       return res.status(502).json({
         error: `Google Gemini hatası (HTTP ${response.status}): ${googleMessage}`
       });
     }
 
-    const answer = data.candidates?.[0]?.content?.parts
-      ?.map(part => part.text || "")
+    const answer = (data?.candidates?.[0]?.content?.parts || [])
+      .map((part) => part.text || "")
       .join("\n")
       .trim();
 
     if (!answer) {
-      console.error("Gemini yanıtında tarif metni bulunamadı.", {
-        finishReason: data.candidates?.[0]?.finishReason,
-        promptFeedback: data.promptFeedback
-      });
+      console.error(
+        "Gemini boş yanıt verdi:",
+        JSON.stringify(data?.promptFeedback || {})
+      );
 
       return res.status(502).json({
         error:
-          "Google isteği kabul etti ancak tarif metni dönmedi. İstek güvenlik nedeniyle engellenmiş olabilir veya yanıt boş olabilir."
+          "Gemini boş yanıt verdi. İstek güvenlik filtresine takılmış veya model yanıt oluşturamamış olabilir."
       });
     }
 
     return res.status(200).json({ answer });
-
   } catch (error) {
-    console.error("Gastrovia sunucu hatası:", {
-      name: error?.name,
-      message: error?.message
-    });
+    console.error("Tarif oluşturma hatası:", error?.message || error);
 
     return res.status(500).json({
       error:
-        "Sunucu isteği tamamlayamadı. Vercel Runtime Logs bölümünü kontrol etmek gerekiyor."
+        "Tarif oluşturulurken sunucu hatası oluştu. Lütfen biraz sonra tekrar deneyin."
     });
   }
-};
+}
