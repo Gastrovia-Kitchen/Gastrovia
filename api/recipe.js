@@ -10,7 +10,7 @@ module.exports = async (req, res) => {
 
     if (!apiKey) {
       return res.status(500).json({
-        error: "Gemini API anahtarı bulunamadı. Vercel ayarlarını kontrol et."
+        error: "GEMINI_API_KEY bulunamadı. Vercel ayarlarını kontrol et."
       });
     }
 
@@ -22,22 +22,32 @@ module.exports = async (req, res) => {
       message
     } = req.body || {};
 
+    if (!ingredients || !ingredients.trim()) {
+      return res.status(400).json({
+        error: "Lütfen malzemelerini yaz."
+      });
+    }
+
     const prompt = `
-Sen Gastroviya'nın profesyonel gastronomi asistanısın.
-Türkçe yanıt ver. Kullanıcıya gerçekten uygulanabilir,
-lezzet dengesi düşünülmüş özgün tarifler öner.
+Sen Gastroviya'nın profesyonel gastronomi şefisin.
+Türkçe yanıt ver. Sıradan, klişe tarifler üretme.
+Verilen malzemelerle yaratıcı ama evde uygulanabilir,
+lezzet dengesi ve doku uyumu düşünülmüş tarif geliştir.
 
-Kullanıcının malzemeleri: ${ingredients || "Belirtilmedi"}
-Amaç: ${goal || "Belirtilmedi"}
+Malzemeler: ${ingredients}
+Amaç: ${goal || "Dengeli beslenme"}
 Bütçe: ${budget || "Belirtilmedi"}
-Öğün: ${mealType || "Belirtilmedi"}
-Ek istek: ${message || "Belirtilmedi"}
+Öğün: ${mealType || "Fark etmez"}
+Ek istek: ${message || "Yok"}
 
-Tarifte porsiyon sayısını, gram cinsinden malzemeleri,
-hazırlık ve pişirme süresini, adım adım yapılışı ve
-önemli pişirme tekniklerini belirt.
-Eksik malzemeler varsa uygun alternatifler öner.
-Yanıtı anlaşılır biçimde ve Türkçe hazırla.
+2 porsiyon için:
+- Malzemeleri gram cinsinden yaz.
+- Hazırlık ve pişirme sürelerini belirt.
+- Adım adım yapılışı anlat.
+- Lezzet dengesini ve teknikleri açıkla.
+- Tabaklama önerisi ve uygun alternatifler ver.
+- Kullanıcının elinde olmayan malzemeleri zorunlu tutma.
+- Sağlık ve besin değerleri hakkında kesin olmayan iddialar kurma.
 `;
 
     const response = await fetch(
@@ -51,9 +61,17 @@ Yanıtı anlaşılır biçimde ve Türkçe hazırla.
         body: JSON.stringify({
           contents: [
             {
-              parts: [{ text: prompt }]
+              parts: [
+                {
+                  text: prompt
+                }
+              ]
             }
-          ]
+          ],
+          generationConfig: {
+            temperature: 0.9,
+            maxOutputTokens: 2048
+          }
         })
       }
     );
@@ -64,9 +82,7 @@ Yanıtı anlaşılır biçimde ve Türkçe hazırla.
       console.error("Gemini API hatası:", response.status, data);
 
       return res.status(502).json({
-        error:
-          data.error?.message ||
-          "Gemini tarif oluşturamadı. API kotasını ve ayarlarını kontrol et."
+        error: JSON.stringify(data.error || data)
       });
     }
 
@@ -76,8 +92,10 @@ Yanıtı anlaşılır biçimde ve Türkçe hazırla.
       .trim();
 
     if (!answer) {
+      console.error("Gemini boş yanıt:", data);
+
       return res.status(502).json({
-        error: "Gemini boş yanıt verdi. Lütfen tekrar dene."
+        error: "Gemini boş yanıt verdi: " + JSON.stringify(data.candidates || data)
       });
     }
 
@@ -87,7 +105,7 @@ Yanıtı anlaşılır biçimde ve Türkçe hazırla.
     console.error("Gastrovia Gemini hatası:", error);
 
     return res.status(500).json({
-      error: "Sunucuda beklenmeyen bir hata oluştu."
+      error: error.message || "Sunucuda beklenmeyen bir hata oluştu."
     });
   }
 };
