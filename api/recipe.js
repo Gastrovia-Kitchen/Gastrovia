@@ -1,92 +1,117 @@
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
-      error: "Bu işlem yalnızca POST isteğiyle yapılabilir."
+      error: "Geçersiz istek."
     });
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
-    console.error("GEMINI_API_KEY ortam değişkeni bulunamadı.");
-
     return res.status(500).json({
-      error:
-        "Gemini API anahtarı bulunamadı. Vercel Environment Variables bölümünde GEMINI_API_KEY tanımlı mı kontrol edin."
+      error: "Gemini API anahtarı bulunamadı."
     });
   }
 
-  try {
-    const {
-      ingredients = "",
-      goal = "Dengeli beslenme",
-      mealType = "Ana öğün",
-      budget = "",
-      message = ""
-    } = req.body || {};
+  const {
+    ingredients = "",
+    goal = "Dengeli beslenme",
+    mealType = "Fark etmez",
+    budget = "",
+    message = ""
+  } = req.body || {};
 
-    const prompt = `
-Sen Gastroviya'nın profesyonel gastronomi ve reçete geliştirme şefisin.
+  const prompt = `
+Sen Gastroviya'nın profesyonel gastronomi şefisin.
+Türkçe, özgün, lezzet dengesi iyi ve evde uygulanabilir bir tarif hazırla.
 
-Amacın sıradan, birbirini tekrar eden tarifler değil; evde uygulanabilir,
-lezzet dengesi düşünülmüş, yaratıcı ve gerçekten yapılmaya değer tarifler
-oluşturmaktır.
+Mevcut malzemeler: ${String(ingredients).slice(0, 1000)}
+Amaç: ${String(goal).slice(0, 150)}
+Öğün: ${String(mealType).slice(0, 100)}
+Bütçe: ${String(budget).slice(0, 100) || "Orta"}
+İstek: ${String(message).slice(0, 500) || "Malzemelerime uygun tarif öner."}
 
-Kullanıcının malzemeleri: ${ingredients || "Belirtilmedi"}
-Beslenme hedefi: ${goal}
-Öğün türü: ${mealType}
-Bütçe: ${budget || "Belirtilmedi"}
-Kullanıcının isteği: ${message || "Malzemelere uygun bir tarif öner."}
+Şu başlıkları kullan:
+Tarif adı
+Kısa açıklama
+Porsiyon ve süreler
+Malzemeler (gram/ml/adet)
+Adım adım yapılış
+Püf noktası ve lezzet dengesi
+Yaklaşık besin değerleri
 
-Kurallar:
-- Türkçe yanıt ver.
-- Önce isteğe gerçekten uygun tek bir güçlü tarif öner.
-- Gereksiz yere pahalı, zor bulunan malzemeler kullanma.
-- Malzemeleri gram ve mililitre cinsinden belirt; adet gerekiyorsa adet de yaz.
-- Kaç kişilik olduğunu, hazırlık ve pişirme sürelerini belirt.
-- Uygulama adımlarını açık ve sıralı yaz.
-- Pişirme sıcaklığı gerekiyorsa belirt.
-- Lezzet dengesi ve kullanılan tekniğin nedenini kısaca açıkla.
-- Uygunsa yaklaşık besin değerlerini belirt; bunların tahmini olduğunu söyle.
-- Kullanıcının belirtmediği malzemeleri elinde varmış gibi varsayma.
-- Klişe ve birbirine benzeyen tariflerden kaçın.
-- Beslenme hedefi verilmişse tarifi buna uygun tasarla; sağlıkla ilgili kesin vaatlerde bulunma.
-- Kullanıcı belirli bir şey istediyse genel bir tarif yerine doğrudan o isteğe cevap ver.
+Gereksiz uzun giriş yapma. Net, profesyonel ve uygulanabilir ol.
+Belirtilmeyen malzemelerin kullanıcıda bulunduğunu varsayma.
 `;
 
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: prompt }]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.8,
-            maxOutputTokens: 4096
-          }
-        })
-      }
-    );
+  const url =
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
 
-    const data = await response.json();
+  try {
+    let response;
+    let data;
+
+    // Yalnızca geçici yoğunluk hatasında bir kez daha dene.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20000);
+
+      try {
+        response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": apiKey
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [{ text: prompt }]
+              }
+            ],
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 2048
+            }
+          }),
+          signal: controller.signal
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
+
+      data = await response.json();
+
+      if (
+        response.ok ||
+        ![429, 500, 503].includes(response.status) ||
+        attempt === 1
+      ) {
+        break;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 700));
+    }
 
     if (!response.ok) {
-      const googleMessage =
-        data?.error?.message || "Google Gemini isteği başarısız oldu.";
+      console.error(
+        "Gemini API:",
+        response.status,
+        data?.error?.message
+      );
 
-      console.error("Gemini API hatası:", response.status, googleMessage);
+      if ([429, 500, 503].includes(response.status)) {
+        return res.status(503).json({
+          error:
+            "Şefimiz şu anda yoğun. Lütfen biraz sonra tekrar deneyin."
+        });
+      }
 
       return res.status(502).json({
-        error: `Google Gemini hatası (HTTP ${response.status}): ${googleMessage}`
+        error:
+          "Tarif servisine ulaşılamadı: " +
+          (data?.error?.message || "Bilinmeyen hata.")
       });
     }
 
@@ -96,24 +121,20 @@ Kurallar:
       .trim();
 
     if (!answer) {
-      console.error(
-        "Gemini boş yanıt verdi:",
-        JSON.stringify(data?.promptFeedback || {})
-      );
-
       return res.status(502).json({
-        error:
-          "Gemini boş yanıt verdi. İstek güvenlik filtresine takılmış veya model yanıt oluşturamamış olabilir."
+        error: "Şefimiz bu kez yanıt oluşturamadı. Tekrar deneyin."
       });
     }
 
     return res.status(200).json({ answer });
   } catch (error) {
-    console.error("Tarif oluşturma hatası:", error?.message || error);
+    console.error("Tarif isteği:", error?.message || error);
 
-    return res.status(500).json({
+    return res.status(504).json({
       error:
-        "Tarif oluşturulurken sunucu hatası oluştu. Lütfen biraz sonra tekrar deneyin."
+        error?.name === "AbortError"
+          ? "Tarif isteği zaman aşımına uğradı. Lütfen tekrar deneyin."
+          : "Bağlantı sorunu oluştu. Lütfen tekrar deneyin."
     });
   }
 }
