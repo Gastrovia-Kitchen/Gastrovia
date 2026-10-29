@@ -6,112 +6,85 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-      console.error("OPENAI_API_KEY ortam değişkeni bulunamadı.");
-
       return res.status(500).json({
-        error: "Yapay zekâ bağlantısı yapılandırılmamış."
+        error: "Gemini API anahtarı bulunamadı. Vercel ayarlarını kontrol et."
       });
     }
 
-    const body = req.body || {};
     const {
       ingredients,
       goal,
       budget,
       mealType,
       message
-    } = body;
+    } = req.body || {};
 
     const prompt = `
-Sen Gastrovia'nın profesyonel gastronomi asistanısın.
-Türkçe, anlaşılır ve güvenli yanıt ver.
-Kullanıcının elindeki malzemelere göre uygulanabilir tarifler öner.
+Sen Gastroviya'nın profesyonel gastronomi asistanısın.
+Türkçe yanıt ver. Kullanıcıya gerçekten uygulanabilir,
+lezzet dengesi düşünülmüş özgün tarifler öner.
 
-Malzemeler: ${ingredients || "Belirtilmedi"}
+Kullanıcının malzemeleri: ${ingredients || "Belirtilmedi"}
 Amaç: ${goal || "Belirtilmedi"}
 Bütçe: ${budget || "Belirtilmedi"}
 Öğün: ${mealType || "Belirtilmedi"}
 Ek istek: ${message || "Belirtilmedi"}
 
-Bir tarif önerirken malzemeleri gram cinsinden miktarlarıyla,
-hazırlanışını, pişirme süresini ve gerekli teknikleri belirt.
-Tarifi evde uygulanabilir ve anlaşılır tut.
+Tarifte porsiyon sayısını, gram cinsinden malzemeleri,
+hazırlık ve pişirme süresini, adım adım yapılışı ve
+önemli pişirme tekniklerini belirt.
+Eksik malzemeler varsa uygun alternatifler öner.
+Yanıtı anlaşılır biçimde ve Türkçe hazırla.
 `;
 
-    let response;
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: prompt }]
+            }
+          ]
+        })
+      }
+    );
 
-    try {
-      response = await fetch(
-        "https://api.openai.com/v1/responses",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`
-          },
-          body: JSON.stringify({
-            model: "gpt-4.1-mini",
-            input: prompt
-          })
-        }
-      );
-    } catch (error) {
-      console.error("OpenAI bağlantı hatası:", error);
-
-      return res.status(502).json({
-        error: "Yapay zekâ servisine bağlanılamadı."
-      });
-    }
-
-    const responseText = await response.text();
-    let data;
-
-    try {
-      data = JSON.parse(responseText);
-    } catch (error) {
-      console.error(
-        "OpenAI geçerli JSON döndürmedi. HTTP durumu:",
-        response.status,
-        "Yanıt:",
-        responseText.slice(0, 500)
-      );
-
-      return res.status(502).json({
-        error: "Yapay zekâ servisinden geçersiz yanıt geldi."
-      });
-    }
+    const data = await response.json();
 
     if (!response.ok) {
-      console.error(
-        "OpenAI API hatası:",
-        response.status,
-        data.error || data
-      );
+      console.error("Gemini API hatası:", response.status, data);
 
       return res.status(502).json({
         error:
           data.error?.message ||
-          "Yapay zekâ isteği başarısız oldu. API ayarlarını kontrol et."
+          "Gemini tarif oluşturamadı. API kotasını ve ayarlarını kontrol et."
       });
     }
 
-    const answer = data.output_text;
+    const answer = data.candidates?.[0]?.content?.parts
+      ?.map(part => part.text || "")
+      .join("\n")
+      .trim();
 
-    if (!answer || !answer.trim()) {
-      console.error("OpenAI yanıtında metin bulunamadı.");
-
+    if (!answer) {
       return res.status(502).json({
-        error: "Yapay zekâ boş yanıt verdi. Lütfen tekrar dene."
+        error: "Gemini boş yanıt verdi. Lütfen tekrar dene."
       });
     }
 
     return res.status(200).json({ answer });
 
   } catch (error) {
-    console.error("Gastrovia API hatası:", error);
+    console.error("Gastrovia Gemini hatası:", error);
 
     return res.status(500).json({
       error: "Sunucuda beklenmeyen bir hata oluştu."
