@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gastroviya Balance</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f5f2e9;color:#29352b;font-family:Arial}
+header{padding:25px 7%;display:flex;justify-content:space-between;border-bottom:1px solid #ddd}
+.logo{font:26px Georgia;color:#52634c}
+nav a{color:#29352b;text-decoration:none;margin-left:15px}
+.hero{padding:75px 8%;background:#e8e9dc}
+.kucuk{color:#657653;letter-spacing:3px;font-size:11px}
+h1{font:normal 65px Georgia;margin:20px 0}
+.hero p{max-width:550px;line-height:1.8;color:#62675d}
+main{padding:55px 7%}
+h2{font:normal 36px Georgia}
+.filtre{display:flex;gap:8px;flex-wrap:wrap;margin:25px 0}
+button{cursor:pointer}
+.filtre button{padding:10px 16px;border:1px solid #9da994;border-radius:25px;background:transparent}
+.filtre button.aktif{background:#52634c;color:white}
+#ara{padding:13px;width:250px;max-width:100%;border:1px solid #ddd}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.kart{background:#fffefa;border:1px solid #e4e0d6;padding:22px}
+.kart small{color:#657653;letter-spacing:2px}
+h3{font:normal 23px Georgia;line-height:1.3;min-height:55px}
+.aciklama{font-size:13px;color:#777;line-height:1.7}
+.deger{display:flex;justify-content:space-between;border-top:1px solid #ddd;border-bottom:1px solid #ddd;padding:15px 0;margin:18px 0;text-align:center}
+.deger strong{display:block;font-size:14px;font-weight:normal}
+.deger span{font-size:10px;color:#777}
+.detay{width:100%;padding:12px;background:transparent;border:1px solid #52634c;color:#52634c}
+.detay:hover{background:#52634c;color:white}
+.icerik{display:none;font-size:13px;line-height:1.8;color:#555;padding-top:15px}
+.not{font-size:11px;color:#777;line-height:1.7;margin-top:30px}
+footer{padding:35px;text-align:center;background:#29352b;color:white;font:20px Georgia}
+@media(max-width:850px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.grid{grid-template-columns:1fr}h1{font-size:45px}main{padding:35px 5%}.hero{padding:50px 6%}}
+</style>
+</head>
+<body>
+<header>
+<div class="logo">GASTROVİYA BALANCE</div>
+<nav><a href="index.html">Ana Sayfa</a><a href="#tarifler">Tarifler</a></nav>
+</header>
+
+<section class="hero">
+<div class="kucuk">DENGELİ MUTFAK KOLEKSİYONU</div>
+<h1>İyi beslenmek,<br>iyi yaşamaktır.</h1>
+<p>Günlük hayata uyum sağlayan, besleyici, yaratıcı ve lezzetli tarifler. Özenli malzemelerle hazırlanan dengeli tabaklar.</p>
+</section>
+
+<main id="tarifler">
+<div class="kucuk">İLK KOLEKSİYON · 10 TARİF</div>
+<h2>Balance Tarifleri</h2>
+<input id="ara" placeholder="Tarif ara...">
+<div class="filtre">
+<button class="aktif" data-kat="hepsi">Tümü</button>
+<button data-kat="tavuk">Tavuk</button>
+<button data-kat="et">Et</button>
+<button data-kat="balik">Balık</button>
+<button data-kat="sebze">Sebze</button>
+</div>
+<div class="grid" id="liste"></div>
+<p class="not">Besin değerleri porsiyon başına yaklaşık değerlerdir. Kullanılan malzemelere ve miktarlara göre değişebilir. Özgün tarif fotoğrafları sonraki aşamada doğru tariflerle eşleştirilecektir.</p>
+</main>
+
+<footer>GASTROVİYA · Lezzet, denge ve yaşam.</footer>
+
+<script>
+const tarifler=[
+{ad:"Ispanaklı Peynir Dolgulu Tavuk",kat:"tavuk",k:436,p:45.7,c:33.2,y:13.4,ac:"Ispanak ve peynir dolgulu, doyurucu tavuk tabağı.",m:"Tavuk göğsü, ıspanak, beyaz peynir, zeytinyağı, sarımsak, karabiber.",h:"Ispanağı sarımsakla sotele ve peynirle karıştır. Açılmış tavuk göğsüne harcı doldurup kapat. Tavada mühürle, fırında tamamen pişir."},
+{ad:"Nar Ekşili Tavuk, Fırın Havuç ve Otlu Yoğurt",kat:"tavuk",k:364,p:43.5,c:22.2,y:10.7,ac:"Nar ekşisi, fırın havuç ve ferah otlu yoğurt.",m:"Tavuk, havuç, nar ekşisi, yoğurt, dereotu, zeytinyağı.",h:"Havuçları fırınla. Tavukları tavada pişirirken nar ekşisi ekle. Yoğurdu dereotuyla karıştır ve birlikte servis et."},
+{ad:"Hardallı Tavuk, Tatlı Patates ve Taze Fasulye",kat:"tavuk",k:422,p:41.1,c:40.3,y:10.7,ac:"Hardal aromalı tavuk ve iki renkli sebze eşliği.",m:"Tavuk, tatlı patates, taze fasulye, hardal, limon, zeytinyağı.",h:"Tatlı patatesleri fırınla. Fasulyeleri diri kalacak şekilde haşla. Tavuğu hardal ve limonla marine edip tavada pişir."},
+{ad:"Fırın Tavuk Köftesi, Domatesli Bulgur ve Kabak",kat:"tavuk",k:513,p:46.5,c:51.8,y:14.2,ac:"Ev yapımı tavuk köftesi ve domatesli bulgur.",m:"Tavuk kıyması, bulgur, domates, kabak, soğan, maydanoz.",h:"Tavuk kıymasını soğan ve maydanozla yoğur. Köfteleri fırında pişir. Domatesli bulgur hazırla, kabağı sotele."},
+{ad:"Domatesli Ispanaklı Tavuk Sote ve Esmer Pirinç",kat:"tavuk",k:522,p:43.9,c:57.6,y:12.3,ac:"Domates, ıspanak ve tavukla pratik bir ana yemek.",m:"Tavuk, ıspanak, domates, esmer pirinç, soğan, zeytinyağı.",h:"Esmer pirinci haşla. Tavuk ve soğanı sotele. Domatesleri ekle, son aşamada ıspanağı ilave et."},
+{ad:"Vişneli Mantar, Arpa Şehriye ve Beyaz Peynir",kat:"sebze",k:506,p:21.2,c:66.8,y:18.4,ac:"Vişnenin ekşiliği, mantar ve peynirin lezzetiyle buluşuyor.",m:"Mantar, vişne, arpa şehriye, beyaz peynir, kekik, zeytinyağı.",h:"Şehriyeyi haşla. Mantarları yüksek ateşte sotele. Vişneleri ekle. Şehriyeyle birleştirip peynirle tamamla."},
+{ad:"Limonlu Somon, Yeşil Mercimek ve Pancar",kat:"balik",k:663,p:50.1,c:58.2,y:26.2,ac:"Somon, mercimek ve pancarla zengin bir balık tabağı.",m:"Somon, yeşil mercimek, pancar, limon, zeytinyağı, dereotu.",h:"Mercimeği haşla. Pancarı fırında pişir. Somonu limon ve baharatla fırında veya tavada pişir. Birlikte servis et."},
+{ad:"Üzümlü Tavuk, Domatesli Bulgur ve Yoğurt Sosu",kat:"tavuk",k:510,p:45.4,c:55.1,y:13.1,ac:"Üzümün tatlılığı, domatesli bulgur ve yoğurtla dengeleniyor.",m:"Tavuk, üzüm, bulgur, domates, yoğurt, nane.",h:"Domatesli bulgur hazırla. Tavukları pişir, son aşamada üzümleri ekle. Yoğurdu nane ve limonla karıştır."},
+{ad:"Biberiyeli Limonlu Tavuk, Tatlı Patates ve Karnabahar",kat:"tavuk",k:513,p:42.8,c:40.7,y:22.7,ac:"Biberiye ve limon aromalı tavuk, fırın sebzelerle.",m:"Tavuk, tatlı patates, karnabahar, limon, biberiye, zeytinyağı.",h:"Tatlı patates ve karnabaharı doğrayıp fırınla. Tavuğu limon ve biberiyeyle marine edip tamamen pişir."},
+{ad:"Biberli Dana Sote, Bulgur ve Yoğurtlu Sebze",kat:"et",k:601,p:43.7,c:58.8,y:23.1,ac:"Renkli biberli dana eti, bulgur ve yoğurtlu sebzeler.",m:"Dana eti, kırmızı biber, yeşil biber, bulgur, yoğurt, kabak.",h:"Dana etini ince doğrayıp yüksek ateşte sotele. Biberleri ekleyip pişir. Bulguru hazırla. Pişmiş kabağı yoğurtla karıştırıp yanında servis et."}
+];
+
+let secili="hepsi";
+function goster(){
+ const arama=document.getElementById("ara").value.toLocaleLowerCase("tr");
+ const sonuc=tarifler.filter(t=>(secili==="hepsi"||t.kat===secili)&&t.ad.toLocaleLowerCase("tr").includes(arama));
+ document.getElementById("liste").innerHTML=sonuc.map(t=>`
+ <article class="kart">
+ <small>GASTROVİYA BALANCE</small>
+ <h3>${t.ad}</h3>
+ <p class="aciklama">${t.ac}</p>
+ <div class="deger">
+ <div><strong>${t.k}</strong><span>Kalori</span></div>
+ <div><strong>${t.p} g</strong><span>Protein</span></div>
+ <div><strong>${t.c} g</strong><span>Karbonhidrat</span></div>
+ <div><strong>${t.y} g</strong><span>Yağ</span></div>
+ </div>
+ <button class="detay" onclick="ac(this)">Tarifi incele</button>
+ <div class="icerik"><b>Malzemeler</b><p>${t.m}</p><b>Hazırlanışı</b><p>${t.h}</p></div>
+ </article>`).join("")||"<p>Tarif bulunamadı.</p>";
+}
+function ac(b){
+ const alan=b.nextElementSibling;
+ const acik=alan.style.display==="block";
+ alan.style.display=acik?"none":"block";
+ b.textContent=acik?"Tarifi incele":"Tarifi kapat";
+}
+document.querySelectorAll("[data-kat]").forEach(b=>b.onclick=()=>{
+ document.querySelectorAll("[data-kat]").forEach(x=>x.classList.remove("aktif"));
+ b.classList.add("aktif");secili=b.dataset.kat;goster();
+});
+document.getElementById("ara").addEventListener("input",goster);
+goster();
+</script>
+</body>
+</html>
